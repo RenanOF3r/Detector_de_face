@@ -12,7 +12,7 @@ import time # Para timestamps nos logs
 try:
     mp_face_detection = mp.solutions.face_detection
     mp_drawing = mp.solutions.drawing_utils
-    # *** ALTERAÇÃO AQUI: Reduzindo o limiar de confiança ***
+    # Mantendo o limiar de confiança baixo para teste
     face_detector = mp_face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.1)
     print(f"[{time.time()}] Detector MediaPipe inicializado (Confiança Mínima: 0.1).", flush=True)
 except AttributeError as e:
@@ -102,15 +102,15 @@ def transformar_coordenadas_box(box_rotada, angulo_rotacao, dim_originais, dim_r
         return None
 
 
-# --- Função de Processamento Principal (com Logs e Indentação Corrigida) ---
-@st.cache_data(show_spinner=False)
+# --- Função de Processamento Principal (CACHE DESABILITADO PARA TESTE) ---
+# @st.cache_data(show_spinner=False) # <--- Cache comentado temporariamente
 def detectar_e_desenhar_rostos(_imagem_pil):
     """
     Detecta rostos em uma imagem PIL, tentando rotações, aplica NMS e retorna
     a contagem e a imagem processada (como array NumPy BGR).
     O argumento _imagem_pil é ignorado pelo cache do Streamlit.
     """
-    print(f"\n[{time.time()}] ===== INICIANDO DETECÇÃO =====", flush=True)
+    print(f"\n[{time.time()}] ===== INICIANDO DETECÇÃO (CACHE DESABILITADO) =====", flush=True) # Log adicionado
     try:
         imagem_rgb_original = np.array(_imagem_pil.convert('RGB'))
         imagem_rgb_original = np.copy(imagem_rgb_original)
@@ -248,7 +248,7 @@ if arquivo_imagem_enviado is not None:
             st.subheader("✨ Imagem Processada")
             with st.spinner('Detectando rostos (testando rotações)... Aguarde!'):
                 print(f"[{time.time()}] Chamando detectar_e_desenhar_rostos...", flush=True)
-                # Chama a função (agora com logs e sem NMS ativo internamente)
+                # Chama a função (agora SEM cache)
                 num_rostos, imagem_final_bgr = detectar_e_desenhar_rostos(imagem_pil)
                 print(f"[{time.time()}] Retornou de detectar_e_desenhar_rostos.", flush=True)
 
