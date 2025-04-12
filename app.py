@@ -15,13 +15,13 @@ try:
     face_detector = mp_face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.3)
     print(f"[{time.time()}] Detector MediaPipe inicializado.", flush=True)
 except AttributeError as e:
-     print(f"[{time.time()}] ERRO CRÍTICO: Falha ao inicializar MediaPipe (AttributeError): {e}", flush=True)
-     st.error(f"Erro Crítico: Falha ao inicializar componentes do MediaPipe. Verifique a instalação. Detalhes: {e}")
-     st.stop()
+    print(f"[{time.time()}] ERRO CRÍTICO: Falha ao inicializar MediaPipe (AttributeError): {e}", flush=True)
+    st.error(f"Erro Crítico: Falha ao inicializar componentes do MediaPipe. Verifique a instalação. Detalhes: {e}")
+    st.stop()
 except Exception as e:
-     print(f"[{time.time()}] ERRO CRÍTICO: Falha ao inicializar MediaPipe (Exception): {e}", flush=True)
-     st.error(f"Erro Crítico: Erro inesperado ao inicializar o MediaPipe. Detalhes: {e}")
-     st.stop()
+    print(f"[{time.time()}] ERRO CRÍTICO: Falha ao inicializar MediaPipe (Exception): {e}", flush=True)
+    st.error(f"Erro Crítico: Erro inesperado ao inicializar o MediaPipe. Detalhes: {e}")
+    st.stop()
 
 # --- Função de Rotação ---
 def rotacionar_imagem(imagem_np, angulo):
@@ -49,8 +49,8 @@ def transformar_coordenadas_box(box_rotada, angulo_rotacao, dim_originais, dim_r
         h_rot, w_rot = dim_rotadas
 
         if w_orig <= 0 or h_orig <= 0 or w_rot <= 0 or h_rot <= 0:
-             print(f"  ERRO Transformação: Dimensões inválidas (orig={dim_originais}, rot={dim_rotadas})", flush=True)
-             return None
+            print(f"  ERRO Transformação: Dimensões inválidas (orig={dim_originais}, rot={dim_rotadas})", flush=True)
+            return None
 
         xmax_r = xmin_r + w_r
         ymax_r = ymin_r + h_r
@@ -72,23 +72,20 @@ def transformar_coordenadas_box(box_rotada, angulo_rotacao, dim_originais, dim_r
         xmin_o, ymin_o, xmax_o, ymax_o = int(round(xmin_o)), int(round(ymin_o)), int(round(xmax_o)), int(round(ymax_o))
         print(f"  Coords Originais Arredondadas (x1,y1,x2,y2): ({xmin_o}, {ymin_o}, {xmax_o}, {ymax_o})", flush=True)
 
-        # Recalcula w/h ANTES de ajustar xmin/ymin aos limites
         w_o_pre = max(0, xmax_o - xmin_o)
         h_o_pre = max(0, ymax_o - ymin_o)
         print(f"  Dimensões Originais Pré-ajuste (w,h): ({w_o_pre}, {h_o_pre})", flush=True)
 
-        # Ajusta xmin/ymin aos limites da imagem original
         xmin_o = max(0, xmin_o)
         ymin_o = max(0, ymin_o)
         xmin_o = min(w_orig - 1, xmin_o) if w_orig > 0 else 0
         ymin_o = min(h_orig - 1, ymin_o) if h_orig > 0 else 0
         print(f"  Coords Originais Pós-ajuste (x1,y1): ({xmin_o}, {ymin_o})", flush=True)
 
-        # Recalcula w/h FINAIS após ajustar xmin/ymin e garante que não excedam os limites
-        w_o = max(0, xmax_o - xmin_o) # Usa xmax_o original, mas xmin_o ajustado
-        h_o = max(0, ymax_o - ymin_o) # Usa ymax_o original, mas ymin_o ajustado
-        w_o = min(w_orig - xmin_o, w_o) if w_orig > xmin_o else 0 # Garante que w não ultrapasse a borda direita
-        h_o = min(h_orig - ymin_o, h_o) if h_orig > ymin_o else 0 # Garante que h não ultrapasse a borda inferior
+        w_o = max(0, xmax_o - xmin_o)
+        h_o = max(0, ymax_o - ymin_o)
+        w_o = min(w_orig - xmin_o, w_o) if w_orig > xmin_o else 0
+        h_o = min(h_orig - ymin_o, h_o) if h_orig > ymin_o else 0
         print(f"  Dimensões Originais Finais (w,h): ({w_o}, {h_o})", flush=True)
 
         if w_o > 0 and h_o > 0:
@@ -104,7 +101,7 @@ def transformar_coordenadas_box(box_rotada, angulo_rotacao, dim_originais, dim_r
         return None
 
 
-# --- Função de Processamento Principal (com Logs) ---
+# --- Função de Processamento Principal (com Logs e Indentação Corrigida) ---
 @st.cache_data(show_spinner=False)
 def detectar_e_desenhar_rostos(_imagem_pil):
     """
@@ -121,9 +118,9 @@ def detectar_e_desenhar_rostos(_imagem_pil):
         h_orig, w_orig, _ = imagem_rgb_original.shape
         print(f"[{time.time()}] Dimensões Originais (H, W): ({h_orig}, {w_orig})", flush=True)
         if h_orig == 0 or w_orig == 0:
-             print(f"[{time.time()}] ERRO: Imagem com dimensões inválidas.", flush=True)
-             st.error("Erro: Imagem carregada tem dimensões inválidas.")
-             return 0, None
+            print(f"[{time.time()}] ERRO: Imagem com dimensões inválidas.", flush=True)
+            st.error("Erro: Imagem carregada tem dimensões inválidas.")
+            return 0, None
 
         imagem_bgr_para_desenho = cv2.cvtColor(imagem_rgb_original, cv2.COLOR_RGB2BGR)
         deteccoes_finais_orig = [] # Lista para guardar boxes (x, y, w, h) nas coordenadas originais
@@ -155,8 +152,8 @@ def detectar_e_desenhar_rostos(_imagem_pil):
                     score = detection.score[0] if detection.score else 'N/A'
                     print(f"    Score: {score}", flush=True)
                     if box_relativa:
-                         print(f"    Box Relativa (xmin,ymin,w,h): ({box_relativa.xmin:.4f}, {box_relativa.ymin:.4f}, {box_relativa.width:.4f}, {box_relativa.height:.4f})", flush=True)
-                         # Verifica validade básica da box relativa
+                        print(f"    Box Relativa (xmin,ymin,w,h): ({box_relativa.xmin:.4f}, {box_relativa.ymin:.4f}, {box_relativa.width:.4f}, {box_relativa.height:.4f})", flush=True)
+                        # Verifica validade básica da box relativa (INDENTAÇÃO CORRIGIDA AQUI E ABAIXO)
                         if not (0 <= box_relativa.xmin <= 1 and 0 <= box_relativa.ymin <= 1 and box_relativa.width > 0 and box_relativa.height > 0):
                             print(f"    AVISO: Box relativa inválida, pulando.", flush=True)
                             continue # Ignora box relativa inválida
@@ -180,7 +177,7 @@ def detectar_e_desenhar_rostos(_imagem_pil):
                         else:
                             print(f"    FALHA: Transformação da box falhou ou retornou None.", flush=True)
                     else:
-                         print(f"    AVISO: Detecção sem location_data.relative_bounding_box.", flush=True)
+                        print(f"    AVISO: Detecção sem location_data.relative_bounding_box.", flush=True)
             else:
                 print(f"[{time.time()}] Nenhuma detecção encontrada por MediaPipe no ângulo {angulo}.", flush=True)
 
@@ -194,9 +191,9 @@ def detectar_e_desenhar_rostos(_imagem_pil):
             print(f"[{time.time()}] Detecções válidas após filtro final: {len(deteccoes_validas)}", flush=True)
 
             if not deteccoes_validas:
-                 st.info("Nenhuma detecção válida encontrada após transformações.")
-                 print(f"[{time.time()}] Nenhuma detecção válida após filtro final.", flush=True)
-                 numero_rostos = 0
+                st.info("Nenhuma detecção válida encontrada após transformações.")
+                print(f"[{time.time()}] Nenhuma detecção válida após filtro final.", flush=True)
+                numero_rostos = 0
             else:
                 numero_rostos = len(deteccoes_validas)
                 st.warning(f"**NMS Desabilitado (Teste): {numero_rostos} detecção(ões) encontrada(s) antes do filtro.**")
