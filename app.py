@@ -78,9 +78,7 @@ def transformar_coordenadas_box(box_rotada, angulo_rotacao, dim_originais, dim_r
 
 
 # --- Função de Processamento Principal (com argumento ignorado no cache) ---
-# Usar cache do Streamlit para evitar reprocessar a mesma imagem se nada mudar
-@st.cache_data(show_spinner=False) # show_spinner=False pois temos nosso próprio spinner
-# CORREÇÃO APLICADA AQUI: _imagem_pil
+@st.cache_data(show_spinner=False)
 def detectar_e_desenhar_rostos(_imagem_pil):
     """
     Detecta rostos em uma imagem PIL, tentando rotações, aplica NMS e retorna
@@ -88,7 +86,6 @@ def detectar_e_desenhar_rostos(_imagem_pil):
     O argumento _imagem_pil é ignorado pelo cache do Streamlit.
     """
     try:
-        # CORREÇÃO APLICADA AQUI: usa _imagem_pil
         imagem_rgb_original = np.array(_imagem_pil.convert('RGB'))
         imagem_rgb_original = np.copy(imagem_rgb_original)
         imagem_rgb_original.flags.writeable = True
@@ -129,35 +126,33 @@ def detectar_e_desenhar_rostos(_imagem_pil):
                         if box_abs_original:
                             deteccoes_finais_orig.append(box_abs_original)
 
+        # --- Pós-processamento: Desenhar TODAS as detecções (SEM NMS para teste) --- MODIFICADO ---
         numero_rostos = 0
         if deteccoes_finais_orig:
+            # Filtra novamente por segurança, garantindo tuplas de 4 inteiros positivos
             deteccoes_validas = [d for d in deteccoes_finais_orig if isinstance(d, tuple) and len(d) == 4 and all(isinstance(v, int) and v >= 0 for v in d) and d[2] > 0 and d[3] > 0]
+
             if not deteccoes_validas:
                  st.info("Nenhuma detecção válida encontrada após transformações.")
+                 numero_rostos = 0
             else:
-                boxes_para_nms = np.array([[float(x), float(y), float(x + w), float(y + h)] for x, y, w, h in deteccoes_validas], dtype=np.float32)
-                confiancas_ficticias = np.ones(len(boxes_para_nms), dtype=np.float32)
-                nms_threshold = 0.3
-                score_threshold = 0.1
-                indices_mantidos = cv2.dnn.NMSBoxes(boxes_para_nms.tolist(), confiancas_ficticias.tolist(), score_threshold=score_threshold, nms_threshold=nms_threshold)
+                numero_rostos = len(deteccoes_validas)
+                # Mensagem indicando que NMS está desabilitado
+                st.warning(f"**NMS Desabilitado (Teste): {numero_rostos} detecção(ões) encontrada(s) antes do filtro.**")
 
-                if len(indices_mantidos) > 0:
-                     if isinstance(indices_mantidos, tuple):
-                         indices_finais = indices_mantidos[0] if len(indices_mantidos) > 0 else []
-                     else:
-                         indices_finais = indices_mantidos.flatten()
-                     numero_rostos = len(indices_finais)
-                     st.success(f"**Número final de rostos detectados: {numero_rostos}**")
-                     for i in indices_finais:
-                         x, y, w, h = deteccoes_validas[i]
-                         cv2.rectangle(imagem_bgr_para_desenho, (x, y), (x + w, y + h), (36, 255, 12), 3)
-                else:
-                     st.info("**Nenhum rosto detectado após filtro de sobreposição (NMS).**")
-                     numero_rostos = 0
+                # Desenhar TODAS as caixas válidas encontradas (podem haver sobreposições)
+                for i in range(len(deteccoes_validas)):
+                    x, y, w, h = deteccoes_validas[i]
+                    # Desenhar retângulo na imagem BGR de desenho (usar cor diferente para indicar teste)
+                    cv2.rectangle(imagem_bgr_para_desenho, (x, y), (x + w, y + h), (255, 0, 0), 2) # Azul, espessura 2
         else:
-            st.info("**Nenhum rosto detectado na imagem (em nenhuma rotação).**")
+            # Esta mensagem agora só aparece se NENHUMA detecção ocorreu em NENHUMA rotação E sobreviveu à transformação
+            st.info("**Nenhum rosto detectado na imagem (em nenhuma rotação) ou falha na transformação.**")
+            numero_rostos = 0
 
+        # Retorna a contagem bruta (antes do NMS) e a imagem com todas as caixas desenhadas
         return numero_rostos, imagem_bgr_para_desenho
+        # --- FIM DO BLOCO MODIFICADO ---
 
     except Exception as e:
         st.error(f"Erro inesperado durante o processamento da imagem: {e}")
@@ -189,27 +184,27 @@ if arquivo_imagem_enviado is not None:
         with coluna_processada:
             st.subheader("✨ Imagem Processada")
             with st.spinner('Detectando rostos (testando rotações)... Aguarde!'):
-                # CORREÇÃO APLICADA AQUI: passa imagem_pil para a função
-                # O cache funcionará corretamente agora devido ao '_' no nome do argumento
+                # Chama a função (agora sem NMS ativo internamente)
                 num_rostos, imagem_final_bgr = detectar_e_desenhar_rostos(imagem_pil)
 
             if imagem_final_bgr is not None and num_rostos >= 0:
                 imagem_final_rgb = cv2.cvtColor(imagem_final_bgr, cv2.COLOR_BGR2RGB)
-                st.image(imagem_final_rgb, caption=f"Processada: {num_rostos} rosto(s) detectado(s)", use_container_width=True)
+                # A legenda agora reflete a contagem bruta (antes do NMS)
+                st.image(imagem_final_rgb, caption=f"Processada (NMS Desabilitado): {num_rostos} detecção(ões)", use_container_width=True)
                 sucesso_encode, buffer = cv2.imencode('.png', imagem_final_bgr)
                 if sucesso_encode:
                     img_bytes = buffer.tobytes()
                     nome_base = arquivo_imagem_enviado.name.rsplit('.', 1)[0]
                     st.download_button(
-                       label="💾 Baixar Imagem Processada",
+                       label="💾 Baixar Imagem (Teste NMS Desabilitado)",
                        data=img_bytes,
-                       file_name=f"rostos_detectados_{nome_base}.png",
+                       file_name=f"rostos_detectados_sem_nms_{nome_base}.png",
                        mime="image/png"
                     )
                 else:
                     st.warning("Não foi possível gerar o arquivo para download.")
             elif num_rostos == 0:
-                 st.info("Processamento concluído, mas nenhum rosto foi detectado nesta imagem.")
+                 st.info("Processamento concluído, mas nenhuma detecção válida foi encontrada nesta imagem (antes do NMS).")
             else:
                 st.error("Falha ao processar a imagem. Verifique os logs se disponíveis.")
 
