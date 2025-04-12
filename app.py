@@ -12,8 +12,9 @@ import time # Para timestamps nos logs
 try:
     mp_face_detection = mp.solutions.face_detection
     mp_drawing = mp.solutions.drawing_utils
-    face_detector = mp_face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.3)
-    print(f"[{time.time()}] Detector MediaPipe inicializado.", flush=True)
+    # *** ALTERAÇÃO AQUI: Reduzindo o limiar de confiança ***
+    face_detector = mp_face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.1)
+    print(f"[{time.time()}] Detector MediaPipe inicializado (Confiança Mínima: 0.1).", flush=True)
 except AttributeError as e:
     print(f"[{time.time()}] ERRO CRÍTICO: Falha ao inicializar MediaPipe (AttributeError): {e}", flush=True)
     st.error(f"Erro Crítico: Falha ao inicializar componentes do MediaPipe. Verifique a instalação. Detalhes: {e}")
@@ -150,10 +151,10 @@ def detectar_e_desenhar_rostos(_imagem_pil):
                     print(f"\n  Processando Detecção #{i+1} (Ângulo {angulo})", flush=True)
                     box_relativa = detection.location_data.relative_bounding_box
                     score = detection.score[0] if detection.score else 'N/A'
-                    print(f"    Score: {score}", flush=True)
+                    print(f"    Score: {score}", flush=True) # Log do score
                     if box_relativa:
                         print(f"    Box Relativa (xmin,ymin,w,h): ({box_relativa.xmin:.4f}, {box_relativa.ymin:.4f}, {box_relativa.width:.4f}, {box_relativa.height:.4f})", flush=True)
-                        # Verifica validade básica da box relativa (INDENTAÇÃO CORRIGIDA AQUI E ABAIXO)
+                        # Verifica validade básica da box relativa
                         if not (0 <= box_relativa.xmin <= 1 and 0 <= box_relativa.ymin <= 1 and box_relativa.width > 0 and box_relativa.height > 0):
                             print(f"    AVISO: Box relativa inválida, pulando.", flush=True)
                             continue # Ignora box relativa inválida
