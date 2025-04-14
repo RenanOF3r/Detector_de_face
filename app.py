@@ -7,6 +7,7 @@ from PIL import Image
 import math
 import time
 import traceback
+import io # Importado para exemplo no sidebar
 
 # --- Configuração do MediaPipe ---
 try:
@@ -100,7 +101,6 @@ def aplicar_nms(caixas, limiar_iou=0.4):
 
 
 # --- Função de Processamento Principal (com Cache e NMS) ---
-# *** ALTERAÇÃO AQUI: Adicionado _bytes_imagem para ajudar o cache ***
 @st.cache_data(show_spinner=False)
 def detectar_e_desenhar_rostos(_imagem_pil, _bytes_imagem):
     """
@@ -108,7 +108,6 @@ def detectar_e_desenhar_rostos(_imagem_pil, _bytes_imagem):
     a contagem e a imagem processada (como array NumPy BGR).
     Os argumentos com _ são ignorados pelo cache para hashing, exceto _bytes_imagem.
     """
-    # Usar len(_bytes_imagem) no log para confirmar que está mudando
     print(f"\n[{time.time()}] ===== INICIANDO DETECÇÃO (Cache Ativo, NMS Ativo, Bytes: {len(_bytes_imagem)}) =====", flush=True)
     try:
         imagem_rgb_original = np.array(_imagem_pil.convert('RGB'))
@@ -124,7 +123,6 @@ def detectar_e_desenhar_rostos(_imagem_pil, _bytes_imagem):
         deteccoes_antes_nms = []
 
         for angulo in [0, 90, 180, 270]:
-            # print(f"  Processando Ângulo: {angulo} graus...", flush=True) # Log opcional
             imagem_rgb_rotacionada = rotacionar_imagem(imagem_rgb_original, angulo)
             imagem_rgb_rotacionada = np.copy(imagem_rgb_rotacionada)
             imagem_rgb_rotacionada.flags.writeable = True
@@ -134,7 +132,6 @@ def detectar_e_desenhar_rostos(_imagem_pil, _bytes_imagem):
             resultados = face_detector.process(imagem_rgb_rotacionada)
 
             if resultados.detections:
-                # print(f"    {len(resultados.detections)} detecção(ões) encontradas no ângulo {angulo}.", flush=True) # Log opcional
                 for detection in resultados.detections:
                     box_relativa = detection.location_data.relative_bounding_box
                     if box_relativa:
@@ -154,7 +151,6 @@ def detectar_e_desenhar_rostos(_imagem_pil, _bytes_imagem):
                         if box_abs_original:
                             deteccoes_antes_nms.append(box_abs_original)
 
-        # print(f"\n  Aplicando NMS em {len(deteccoes_antes_nms)} detecções brutas...", flush=True) # Log opcional
         caixas_finais_nms = aplicar_nms(deteccoes_antes_nms, limiar_iou=0.4)
         numero_rostos = len(caixas_finais_nms)
         print(f"  {numero_rostos} rosto(s) detectado(s) após NMS.", flush=True)
@@ -163,7 +159,6 @@ def detectar_e_desenhar_rostos(_imagem_pil, _bytes_imagem):
             for (x, y, w, h) in caixas_finais_nms:
                 cv2.rectangle(imagem_bgr_para_desenho, (x, y), (x + w, y + h), (0, 255, 0), 2) # Verde
         else:
-            # Apenas log, a interface mostrará 0 rostos
              print("  Nenhum rosto detectado após NMS.")
 
 
@@ -190,22 +185,18 @@ arquivo_imagem_enviado = st.file_uploader(
 
 if arquivo_imagem_enviado is not None:
     try:
-        # Lê os bytes uma vez para passar para a função cacheada
         bytes_da_imagem = arquivo_imagem_enviado.getvalue()
-        # Cria o objeto PIL a partir dos bytes lidos
-        imagem_pil = Image.open(arquivo_imagem_enviado) # Ou Image.open(io.BytesIO(bytes_da_imagem))
+        imagem_pil = Image.open(io.BytesIO(bytes_da_imagem)) # Usar io.BytesIO é mais seguro
 
         coluna_original, coluna_processada = st.columns(2)
 
         with coluna_original:
             st.subheader("🖼️ Imagem Original")
-            # Mostra a imagem PIL
             st.image(imagem_pil, caption=f"Original: {arquivo_imagem_enviado.name}", use_container_width=True)
 
         with coluna_processada:
             st.subheader("✨ Imagem Processada")
             with st.spinner('Detectando rostos...'):
-                # *** ALTERAÇÃO AQUI: Passando imagem_pil e bytes_da_imagem ***
                 num_rostos, imagem_final_bgr = detectar_e_desenhar_rostos(imagem_pil, bytes_da_imagem)
 
             if imagem_final_bgr is not None and num_rostos >= 0:
@@ -240,8 +231,8 @@ st.markdown("---")
 st.markdown("Desenvolvido com [Streamlit](https://streamlit.io/) & [Google MediaPipe](https://developers.google.com/mediapipe)")
 
 # --- Informação sobre arquivos de imagem grandes ---
-# Adicionado para cumprir a instrução especial sobre arquivos de imagem
 st.sidebar.title("ℹ️ Informações Adicionais")
+# *** CORREÇÃO AQUI: Fechando a string com """ ***
 st.sidebar.info("""
 Os arquivos `image.png` que foram enviados anteriormente não puderam ter seu texto extraído, possivelmente por serem muito grandes ou por um problema temporário na ferramenta de extração.
 
@@ -253,7 +244,7 @@ from PIL import Image
 import io
 
 # Supondo que 'file_content' contenha os bytes do arquivo image.png
-# file_content = ... # obter os bytes do arquivo
+# file_content = b'...' # obter os bytes do arquivo
 
 # try:
 #     img = Image.open(io.BytesIO(file_content))
