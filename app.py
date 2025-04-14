@@ -231,9 +231,10 @@ st.markdown("---")
 st.markdown("Desenvolvido com [Streamlit](https://streamlit.io/) & [Google MediaPipe](https://developers.google.com/mediapipe)")
 
 # --- Informação sobre arquivos de imagem grandes ---
+# *** ALTERAÇÃO AQUI: Definindo a string em uma variável separada ***
 st.sidebar.title("ℹ️ Informações Adicionais")
-# *** CORREÇÃO AQUI: Fechando a string com """ ***
-st.sidebar.info("""
+
+info_sidebar_text = """
 Os arquivos `image.png` que foram enviados anteriormente não puderam ter seu texto extraído, possivelmente por serem muito grandes ou por um problema temporário na ferramenta de extração.
 
 **Estes documentos só podem ser usados na execução de código.**
