@@ -231,25 +231,11 @@ st.markdown("---")
 st.markdown("Desenvolvido com [Streamlit](https://streamlit.io/) & [Google MediaPipe](https://developers.google.com/mediapipe)")
 
 # --- Informação sobre arquivos de imagem grandes ---
-# *** ALTERAÇÃO AQUI: Definindo a string em uma variável separada ***
+# *** ALTERAÇÃO AQUI: String drasticamente simplificada para teste ***
 st.sidebar.title("ℹ️ Informações Adicionais")
 
 info_sidebar_text = """
-Os arquivos `image.png` que foram enviados anteriormente não puderam ter seu texto extraído, possivelmente por serem muito grandes ou por um problema temporário na ferramenta de extração.
-
-**Estes documentos só podem ser usados na execução de código.**
-
-Exemplo de como carregar uma dessas imagens em código Python (se estivessem disponíveis no ambiente de execução):
-```python
-from PIL import Image
-import io
-
-# Supondo que 'file_content' contenha os bytes do arquivo image.png
-# file_content = b'...' # obter os bytes do arquivo
-
-# try:
-#     img = Image.open(io.BytesIO(file_content))
-#     print("Imagem 'image.png' carregada com sucesso.")
-#     # Processar a imagem 'img'
-# except Exception as e:
-#     print(f"Erro ao carregar 'image.png': {e}")
+Informação simples para teste.
+Linha 2 da informação.
+"""
+st.sidebar.info(info_sidebar_text) # Passando a variável para a função
