@@ -12,9 +12,9 @@ import time # Para timestamps nos logs
 try:
     mp_face_detection = mp.solutions.face_detection
     mp_drawing = mp.solutions.drawing_utils
-    # Mantendo o limiar de confiança baixo para teste
-    face_detector = mp_face_detection.FaceDetection(model_selection=0, min_detection_confidence=0.1)
-    print(f"[{time.time()}] Detector MediaPipe inicializado (Confiança Mínima: 0.1).", flush=True)
+    # *** ALTERAÇÃO AQUI: Mudando para model_selection=1 ***
+    face_detector = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.1)
+    print(f"[{time.time()}] Detector MediaPipe inicializado (Modelo: 1, Confiança Mínima: 0.1).", flush=True)
 except AttributeError as e:
     print(f"[{time.time()}] ERRO CRÍTICO: Falha ao inicializar MediaPipe (AttributeError): {e}", flush=True)
     st.error(f"Erro Crítico: Falha ao inicializar componentes do MediaPipe. Verifique a instalação. Detalhes: {e}")
@@ -248,7 +248,7 @@ if arquivo_imagem_enviado is not None:
             st.subheader("✨ Imagem Processada")
             with st.spinner('Detectando rostos (testando rotações)... Aguarde!'):
                 print(f"[{time.time()}] Chamando detectar_e_desenhar_rostos...", flush=True)
-                # Chama a função (agora SEM cache)
+                # Chama a função (agora SEM cache e com model_selection=1)
                 num_rostos, imagem_final_bgr = detectar_e_desenhar_rostos(imagem_pil)
                 print(f"[{time.time()}] Retornou de detectar_e_desenhar_rostos.", flush=True)
 
